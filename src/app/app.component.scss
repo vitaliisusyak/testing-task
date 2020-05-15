@@ -1,0 +1,21 @@
+main {
+  max-width: 1000px;
+  margin: 2rem auto;
+
+  section {
+    margin: 1rem 0;
+    text-align: center;
+
+    button {
+      margin: 0 1rem;
+    }
+  }
+}
+mat-card {
+  background-color: #f8f8ff;
+}
+
+.data {
+  display: flex;
+  justify-content: space-evenly;
+}
