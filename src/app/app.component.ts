@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -6,7 +6,7 @@ import {Component, OnInit} from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'testing-task';
   randomNumber: number;
   openedPagesCounter: number;
@@ -19,54 +19,56 @@ export class AppComponent implements OnInit {
     window.addEventListener('beforeunload', () => this.onCloseTab());
   }
 
-  onCloseTab() {
+  getInfoFromLocalStorage() {
     const storage = localStorage.getItem('pages');
-    const randomNumbers = JSON.parse(storage);
-    const updatedArray = randomNumbers.filter(randomNumber => randomNumber.randomNumber !== this.randomNumber);
-    this.openedPagesCounter = updatedArray.length;
-    localStorage.setItem('pages', JSON.stringify(updatedArray));
+    return JSON.parse(storage);
+  }
+
+  setInfoToLocalStorage(key, info) {
+    return localStorage.setItem(key, JSON.stringify(info));
+  }
+
+  onCloseTab() {
+    const storage = this.getInfoFromLocalStorage();
+    const filteredStorage = storage.filter(openedPage => openedPage.randomNumber !== this.randomNumber);
+    this.openedPagesCounter = filteredStorage.length;
+    this.setInfoToLocalStorage('pages', filteredStorage);
   }
 
   onStorageEvent() {
-    const storage = localStorage.getItem('pages');
-    const randomNumbers = JSON.parse(storage);
-    this.openedPagesCounter = randomNumbers.length;
-    const isOddNumber = randomNumbers.find(randomNumber => {
-      return randomNumber.randomNumber === this.randomNumber;
+    const storage = this.getInfoFromLocalStorage();
+    this.openedPagesCounter = storage.length;
+    const isOddNumber = storage.find(openedPage => {
+      return openedPage.randomNumber === this.randomNumber;
     });
     if (isOddNumber === undefined) {
       window.close();
-      window.self.close();
     }
   }
 
   closeAllTabs() {
-    const storage = localStorage.getItem('pages');
-    const randomNumbers = JSON.parse(storage);
-
-    const currentPage = randomNumbers.find(randomNumber => {
-      if (randomNumber.randomNumber === this.randomNumber) {
-        return randomNumber.id;
+    const storage = this.getInfoFromLocalStorage();
+    const currentPage = storage.find(openedPage => {
+      if (openedPage.randomNumber === this.randomNumber) {
+        return openedPage.id;
       }
     });
-    const filteredRandomNumbers = randomNumbers.filter(randomNumber => {
+    const filteredStorage = storage.filter(randomNumber => {
       return randomNumber.id === currentPage.id || randomNumber.randomNumber % 2 !== 0;
     });
-    this.openedPagesCounter = filteredRandomNumbers.length;
-    localStorage.setItem('pages', JSON.stringify(filteredRandomNumbers));
+    this.openedPagesCounter = filteredStorage.length;
+    this.setInfoToLocalStorage('pages', filteredStorage);
   }
 
   modifyStorage() {
-    const storage = localStorage.getItem('pages');
-
+    const storage = this.getInfoFromLocalStorage();
     if (storage) {
-      const randomNumbers = JSON.parse(storage);
-      randomNumbers.push({
+      storage.push({
         randomNumber: this.randomNumber,
-        id: randomNumbers.length + 1
+        id: storage.length + 1
       });
-      this.openedPagesCounter = randomNumbers.length;
-      localStorage.setItem('pages', JSON.stringify(randomNumbers));
+      this.openedPagesCounter = storage.length;
+      this.setInfoToLocalStorage('pages', storage);
     } else {
       const initialPage = [
         {
@@ -75,7 +77,12 @@ export class AppComponent implements OnInit {
         }
       ];
       this.openedPagesCounter = 1;
-      localStorage.setItem('pages', JSON.stringify(initialPage));
+      this.setInfoToLocalStorage('pages', initialPage);
     }
+  }
+
+  ngOnDestroy() {
+    window.removeEventListener('storage', () => this.onStorageEvent());
+    window.removeEventListener('beforeunload', () => this.onCloseTab());
   }
 }
