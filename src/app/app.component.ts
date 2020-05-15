@@ -9,62 +9,72 @@ import {Component, OnInit} from '@angular/core';
 export class AppComponent implements OnInit {
   title = 'testing-task';
   randomNumber: number;
-  openedPagesCounter = 1;
+  openedPagesCounter: number;
+
 
   ngOnInit(): void {
     this.randomNumber = Math.floor(Math.random() * 101);
     this.modifyStorage();
-    this.onStorageEvent();
-    this.onCloseTab();
+    window.addEventListener('storage', () => this.onStorageEvent());
+    window.addEventListener('beforeunload', () => this.onCloseTab());
   }
 
   onCloseTab() {
-    window.onbeforeunload = () => {
-      const storage = localStorage.getItem('pages');
-      let [counter, randomNumbers] = JSON.parse(storage);
-      const updatedArray = randomNumbers.filter(randomNumber => randomNumber !== this.randomNumber);
-      counter = updatedArray.length;
-      localStorage.setItem('pages', JSON.stringify([counter, updatedArray]));
-    };
+    const storage = localStorage.getItem('pages');
+    const randomNumbers = JSON.parse(storage);
+    const updatedArray = randomNumbers.filter(randomNumber => randomNumber.randomNumber !== this.randomNumber);
+    this.openedPagesCounter = updatedArray.length;
+    localStorage.setItem('pages', JSON.stringify(updatedArray));
   }
 
   onStorageEvent() {
-    window.onstorage = () => {
-      const storage = localStorage.getItem('pages');
-      const [counter, randomNumbers] = JSON.parse(storage);
-      this.openedPagesCounter = counter;
-      const isOddNumber = randomNumbers.find(randomNumber => randomNumber === this.randomNumber);
-      if (isOddNumber === undefined) {
-        window.close();
-      }
-    };
+    const storage = localStorage.getItem('pages');
+    const randomNumbers = JSON.parse(storage);
+    this.openedPagesCounter = randomNumbers.length;
+    const isOddNumber = randomNumbers.find(randomNumber => {
+      return randomNumber.randomNumber === this.randomNumber;
+    });
+    if (isOddNumber === undefined) {
+      window.close();
+      window.self.close();
+    }
   }
 
   closeAllTabs() {
     const storage = localStorage.getItem('pages');
-    let [counter, randomNumbers] = JSON.parse(storage);
+    const randomNumbers = JSON.parse(storage);
 
-    const filteredRandomNumbers = randomNumbers.filter(randomNumber => randomNumber % 2 !== 0);
-    counter = filteredRandomNumbers.length;
-    localStorage.setItem('pages', JSON.stringify([counter, filteredRandomNumbers]));
+    const currentPage = randomNumbers.find(randomNumber => {
+      if (randomNumber.randomNumber === this.randomNumber) {
+        return randomNumber.id;
+      }
+    });
+    const filteredRandomNumbers = randomNumbers.filter(randomNumber => {
+      return randomNumber.id === currentPage.id || randomNumber.randomNumber % 2 !== 0;
+    });
+    this.openedPagesCounter = filteredRandomNumbers.length;
+    localStorage.setItem('pages', JSON.stringify(filteredRandomNumbers));
   }
 
   modifyStorage() {
     const storage = localStorage.getItem('pages');
 
     if (storage) {
-      let [counter, randomNumbers] = JSON.parse(storage);
-      counter++;
-      this.openedPagesCounter = counter;
-      randomNumbers.push(this.randomNumber);
-      localStorage.setItem('pages', JSON.stringify([counter, randomNumbers]));
+      const randomNumbers = JSON.parse(storage);
+      randomNumbers.push({
+        randomNumber: this.randomNumber,
+        id: randomNumbers.length + 1
+      });
+      this.openedPagesCounter = randomNumbers.length;
+      localStorage.setItem('pages', JSON.stringify(randomNumbers));
     } else {
       const initialPage = [
-        this.openedPagesCounter,
-        [
-          this.randomNumber
-        ]
+        {
+          randomNumber: this.randomNumber,
+          id: 1
+        }
       ];
+      this.openedPagesCounter = 1;
       localStorage.setItem('pages', JSON.stringify(initialPage));
     }
   }
