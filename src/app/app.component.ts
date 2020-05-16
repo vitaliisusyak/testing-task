@@ -11,7 +11,6 @@ export class AppComponent implements OnInit, OnDestroy {
   randomNumber: number;
   openedPagesCounter: number;
 
-
   ngOnInit(): void {
     this.randomNumber = Math.floor(Math.random() * 101);
     this.modifyStorage();
@@ -19,15 +18,17 @@ export class AppComponent implements OnInit, OnDestroy {
     window.addEventListener('beforeunload', () => this.onCloseTab());
   }
 
+  // Read and write operations to Local Storage
   getInfoFromLocalStorage() {
     const storage = localStorage.getItem('pages');
-    return JSON.parse(storage);
+    return storage ? JSON.parse(storage) : null;
   }
 
   setInfoToLocalStorage(key, info) {
     return localStorage.setItem(key, JSON.stringify(info));
   }
 
+  // Close tab not programmatically
   onCloseTab() {
     const storage = this.getInfoFromLocalStorage();
     const filteredStorage = storage.filter(openedPage => openedPage.randomNumber !== this.randomNumber);
@@ -35,6 +36,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.setInfoToLocalStorage('pages', filteredStorage);
   }
 
+  // Function that fires when Local Storage is modified
   onStorageEvent() {
     const storage = this.getInfoFromLocalStorage();
     this.openedPagesCounter = storage.length;
@@ -46,6 +48,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Close tabs with even numbers
   closeAllTabs() {
     const storage = this.getInfoFromLocalStorage();
     const currentPage = storage.find(openedPage => {
@@ -60,6 +63,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.setInfoToLocalStorage('pages', filteredStorage);
   }
 
+  // Page init function
   modifyStorage() {
     const storage = this.getInfoFromLocalStorage();
     if (storage) {
